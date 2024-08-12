@@ -71,9 +71,8 @@ class QuestionReplyHandler(BaseHandler):
     QUICK_ANSWERS = {
         "yes": "Yes",
         "no": "No",
-        "answered": "Answered in Task Description (Explicitly or Implicitly)",
-        "invalid": "Invalid Question (not a Yes/No Question)",
-        "nocomment": "No Comment",
+        "invalid": "Invalid Question (not a Yes/No Question) – The question is most likely not phrased so that a yes/no answer would be meaningful. The contestant is encouraged to rephrase the question",
+        "nocomment": "No Comment/Please refer to task statement",
     }
 
     @require_permission(BaseHandler.PERMISSION_MESSAGING)
