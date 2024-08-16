@@ -44,9 +44,10 @@ logger = logging.getLogger(__name__)
 
 
 class DatasetImporter:
-    def __init__(self, path, description, loader_class):
+    def __init__(self, path, description, override_name, loader_class):
         self.file_cacher = FileCacher()
         self.description = description
+        self.override_name = override_name
         self.loader = loader_class(os.path.abspath(path), self.file_cacher)
 
     def do_import(self):
@@ -56,6 +57,10 @@ class DatasetImporter:
         task = self.loader.get_task(get_statement=False)
         if task is None:
             return False
+
+        # Override name, if necessary
+        if self.override_name:
+            task.name = self.override_name
 
         # Keep the dataset (and the task name) and delete the task
         dataset = task.active_dataset
@@ -112,6 +117,13 @@ def main():
         default=None,
         help="use the specified loader (default: autodetect)"
     )
+
+    parser.add_argument(
+        "-n", "--name",
+        action="store", type=utf8_decoder,
+        help="the new name that will override the task name"
+    )
+
     parser.add_argument(
         "target",
         action="store", type=utf8_decoder,
@@ -130,6 +142,7 @@ def main():
 
     importer = DatasetImporter(path=args.target,
                                description=args.description,
+                               override_name=args.name,
                                loader_class=loader_class)
     success = importer.do_import()
     return 0 if success is True else 1
