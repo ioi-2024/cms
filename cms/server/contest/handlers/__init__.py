@@ -40,6 +40,7 @@ from .task import \
     TaskAttachmentViewHandler
 from .tasksubmission import \
     SubmitHandler, \
+    SubmitApiHandler, \
     TaskSubmissionsHandler, \
     SubmissionStatusHandler, \
     SubmissionDetailsHandler, \
@@ -75,6 +76,7 @@ HANDLERS = [
     # Task submissions
 
     (r"/tasks/(.*)/submit", SubmitHandler),
+    (r"/tasks/(.*)/submit-api", SubmitApiHandler),
     (r"/tasks/(.*)/submissions", TaskSubmissionsHandler),
     (r"/tasks/(.*)/submissions/([1-9][0-9]*)", SubmissionStatusHandler),
     (r"/tasks/(.*)/submissions/([1-9][0-9]*)/details",
