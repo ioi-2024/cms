@@ -88,7 +88,7 @@ class SubmitHandler(ContestHandler):
             raise tornado_web.HTTPError(404)
 
         # Only set the official bit when the user can compete and we are not in
-        # analysis mode.
+        # analysis mode. Keep synchronized with SubmitApiHandler.
         official = self.r_params["actual_phase"] == 0
 
         query_args = dict()
@@ -116,6 +116,44 @@ class SubmitHandler(ContestHandler):
 
         self.redirect(self.contest_url("tasks", task.name, "submissions",
                                        **query_args))
+
+
+class SubmitApiHandler(ContestHandler):
+    """A provisional API for submitting solutions.
+
+    CAVEAT: This is an experimental API for use with ioisubmit.
+    It assumes that contestants authenticate themselves by IP-based login.
+    There is no protection against XSRF attacks yet.
+
+    """
+
+    @tornado_web.authenticated
+    @actual_phase_required(0, 3)
+    @multi_contest
+    def post(self, task_name):
+        task = self.get_task(task_name)
+        if task is None:
+            logger.info(f'API submission rejected: No such task')
+            self.write({'error': 'No such task'})
+            return
+
+        # Keep synchronized with SubmitHandler.
+        official = self.r_params["actual_phase"] == 0
+
+        try:
+            submission = accept_submission(
+                self.sql_session, self.service.file_cacher, self.current_user,
+                task, self.timestamp, self.request.files,
+                self.get_argument("language", None), official)
+            self.sql_session.commit()
+        except UnacceptableSubmission as e:
+            logger.info(f'API submission rejected: {e.subject} ({e.formatted_text})')
+            self.write({'error': e.subject, 'detail': e.formatted_text})
+        else:
+            logger.info(f'API submission accepted: Submission ID {submission.id}')
+            self.service.evaluation_service.new_submission(
+                submission_id=submission.id)
+            self.write({'ok': 'Submission received'})
 
 
 class TaskSubmissionsHandler(ContestHandler):
