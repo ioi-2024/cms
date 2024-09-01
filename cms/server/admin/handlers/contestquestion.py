@@ -71,7 +71,7 @@ class QuestionReplyHandler(BaseHandler):
     QUICK_ANSWERS = {
         "yes": "Yes",
         "no": "No",
-        "invalid": "Invalid Question (not a Yes/No Question) – The question is most likely not phrased so that a yes/no answer would be meaningful. The contestant is encouraged to rephrase the question",
+        "invalid": "Invalid Question (not a Yes/No Question)",
         "nocomment": "No Comment/Please refer to task statement",
     }
 
