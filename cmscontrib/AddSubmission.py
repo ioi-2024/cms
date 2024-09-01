@@ -21,6 +21,7 @@
 """
 
 import argparse
+import gevent
 import logging
 import sys
 
@@ -40,6 +41,11 @@ def maybe_send_notification(submission_id):
     """Non-blocking attempt to notify a running ES of the submission"""
     rs = RemoteServiceClient(ServiceCoord("EvaluationService", 0))
     rs.connect()
+    # XXX: Wait for a limited time for the service to connect
+    for _ in range(100):
+        if rs.connected:
+            break
+        gevent.sleep(0.01)
     rs.new_submission(submission_id=submission_id)
     rs.disconnect()
 
