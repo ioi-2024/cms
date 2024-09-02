@@ -32,6 +32,7 @@ from cms.db.filecacher import FileCacher
 from cms.grading.languagemanager import filename_to_language, get_language
 from cms.io import RemoteServiceClient
 from cmscommon.datetime import make_datetime
+from cms.server.contest.submission.check import check_max_number
 
 
 logger = logging.getLogger(__name__)
@@ -77,7 +78,7 @@ def language_from_submitted_files(files):
     return language
 
 
-def add_submission(contest_id, username, task_name, timestamp, files, given_language):
+def add_submission(contest_id, username, task_name, timestamp, files, given_language, check_max_submissions):
     file_cacher = FileCacher()
     with SessionGen() as session:
 
@@ -97,6 +98,7 @@ def add_submission(contest_id, username, task_name, timestamp, files, given_lang
         if task is None:
             logging.critical("Unable to find task `%s'.", task_name)
             return False
+        contest = participation.contest
 
         elements = set(task.submission_format)
 
@@ -128,6 +130,15 @@ def add_submission(contest_id, username, task_name, timestamp, files, given_lang
                 logger.critical("Unable to infer language from submission.")
                 return False
         language_name = None if language is None else language.name
+
+        if check_max_submissions:
+            # XXX: We are calling a part of the CWS, which is a layering violation.
+            if not check_max_number(session, contest.max_submission_number, participation, contest=contest):
+                logger.critical("Maximum number of submissions among all tasks exceeded")
+                return False
+            if not check_max_number(session, task.max_submission_number, participation, task=task):
+                logger.critical("Maximum number of submissions on this task exceeded")
+                return False
 
         # Store all files from the arguments, and obtain their digests..
         file_digests = {}
@@ -179,6 +190,9 @@ def main():
     parser.add_argument("-l", "--language",
                         help="programming language (e.g., 'C++17 / g++'), "
                         "default is to guess from file name extension")
+    parser.add_argument("--check-max-submissions", default=False, action="store_true",
+                        help="fail if limits on the maximum number of submissions "
+                        "for a contest/task are exceeded")
 
     args = parser.parse_args()
 
@@ -206,7 +220,8 @@ def main():
                              task_name=args.task_name,
                              timestamp=args.timestamp,
                              files=files,
-                             given_language=args.language)
+                             given_language=args.language,
+                             check_max_submissions=args.check_max_submissions)
     return 0 if success is True else 1
 
 
