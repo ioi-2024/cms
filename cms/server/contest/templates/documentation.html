@@ -43,24 +43,5 @@
   </tbody>
 </table>
 
-<h2>{% trans %}Submission details for evaluation{% endtrans %}</h2>
-
-<table class="table table-bordered">
-  <thead>
-    <tr>
-      <th style="width: 30%;">{% trans %}Message{% endtrans %}</th>
-      <th>{% trans %}Explanation{% endtrans %}</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for message in EVALUATION_MESSAGES.all() %}
-    <tr>
-      <td><em>{{ _(message.message) }}</em></td>
-      <td>{{ _(message.help_text) }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-
 </div>
 {% endblock core %}
