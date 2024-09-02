@@ -30,6 +30,7 @@ import json
 import logging
 from datetime import timedelta
 
+from sqlalchemy import or_
 from sqlalchemy.orm import contains_eager, joinedload
 
 from cms import config
@@ -247,10 +248,15 @@ def _authenticate_request_by_ip_address(sql_session, contest, ip_address):
     # since we're comparing it for equality with other networks.
     ip_network = ipaddress.ip_network((ip_address, ip_address.max_prefixlen))
 
+    # FIXME: Subnet-based login for VPN users with dynamically allocated addresses
+    # Currently special-cased to /24.
+    ip_subnet = ipaddress.ip_network((ip_address, 24), strict=False)
+
     participations = sql_session.query(Participation) \
         .options(joinedload(Participation.user)) \
         .filter(Participation.contest == contest) \
-        .filter(Participation.ip.any(ip_network))
+        .filter(or_(Participation.ip.any(ip_network),
+                    Participation.ip.any(ip_subnet)))
 
     # If hidden users are blocked we ignore them completely.
     if contest.block_hidden_participations:
